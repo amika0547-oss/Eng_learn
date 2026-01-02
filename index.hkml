@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOEIC Quest: 挑戰 800 分俱樂部</title>
+    <style>
+        :root {
+            --primary: #4f46e5; /* 冒險藍 */
+            --secondary: #fbbf24; /* 金幣黃 */
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--light);
+            color: var(--dark);
+        }
+
+        /* Header / Dashboard */
+        header {
+            background: var(--dark);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .stats { display: flex; gap: 20px; font-size: 1.1rem; }
+        .stat-box span { font-weight: bold; color: var(--secondary); }
+
+        /* Main Layout */
+        main {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Theme Selector */
+        .themes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .theme-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        .theme-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .theme-title { font-weight: bold; margin-bottom: 0.5rem; }
+        .theme-desc { font-size: 0.85rem; color: #666; }
+
+        /* Game Area */
+        #game-area {
+            display: none; /* Hidden initially */
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-card h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            margin: 1.5rem 0;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover { background-color: #f9fafb; border-color: var(--primary); }
+        
+        .option-btn.correct {
+            background-color: #d1fae5;
+            border-color: var(--success);
+            color: #065f46;
+        }
+
+        .option-btn.wrong {
+            background-color: #fee2e2;
+            border-color: var(--danger);
+            color: #991b1b;
+        }
+
+        .feedback {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            display: none;
+        }
+
+        .next-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-weight: bold;
+            display: none;
+            float: right;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 99px;
+            height: 10px;
+            margin-bottom: 2rem;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--success);
+            border-radius: 99px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🚀 TOEIC Quest</div>
+    <div class="stats">
+        <div class="stat-box">XP: <span id="xp-display">0</span></div>
+        <div class="stat-box">Level: <span id="level-display">1</span></div>
+    </div>
+</header>
+
+<main>
+    <section id="theme-selection">
+        <h2>選擇你的挑戰主題</h2>
+        <p>掌握不同情境的關鍵字彙，邁向 800 分！</p>
+        <div class="themes">
+            <div class="theme-card" onclick="startGame('business')">
+                <div class="theme-icon">💼</div>
+                <div class="theme-title">商務會議</div>
+                <div class="theme-desc">會議記錄、提案、談判用語</div>
+            </div>
+            <div class="theme-card" onclick="startGame('travel')">
+                <div class="theme-icon">✈️</div>
+                <div class="theme-title">商務差旅</div>
+                <div class="theme-desc">機場、飯店預訂、行程安排</div>
+            </div>
+            <div class="theme-card" onclick="startGame('office')">
+                <div class="theme-icon">🖨️</div>
+                <div class="theme-title">辦公室溝通</div>
+                <div class="theme-desc">Email 寫作、同事對話、公告</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="game-area">
+        <button class="back-btn" onclick="goBack()">← 回到大廳</button>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="question-card">
+            <h3 id="category-tag">General Business</h3>
+            <div class="question-text" id="question-text">
+                Loading question...
+            </div>
+            <div class="options" id="options-container">
+                </div>
+        </div>
+
+        <div class="feedback" id="feedback-area">
+            <strong>解析：</strong> <span id="explanation-text"></span>
+        </div>
+
+        <button class="next-btn" id="next-btn" onclick="nextQuestion()">下一題 Challenge →</button>
+    </section>
+</main>
+
+<script>
+    // 模擬資料庫：TOEIC 800+ 難度題目
+    const questionBank = {
+        business: [
+            {
+                q: "The merger cannot proceed ______ all the shareholders have signed the agreement.",
+                options: ["unless", "despite", "without", "however"],
+                correct: 0,
+                explanation: "這裡需要一個連接詞來連接兩個子句。'Unless' (除非) 是最合適的邏輯關係。'Without' 是介係詞，不能直接接子句。"
+            },
+            {
+                q: "Ms. Lee was ______ to learn that her proposal had been accepted by the board.",
+                options: ["delight", "delighting", "delighted", "delightful"],
+                correct: 2,
+                explanation: "人感到高興用過去分詞 (V-ed)。'Delighted' 意為感到高興的。'Delightful' 是用來形容事物令人愉快的。"
+            }
+        ],
+        travel: [
+            {
+                q: "Passengers are reminded to ______ their belongings before leaving the aircraft.",
+                options: ["inspect", "secure", "check", "assure"],
+                correct: 2,
+                explanation: "檢查隨身物品最常用的搭配詞是 'check personal belongings'。'Inspect' 通常指正式的視察。"
+            },
+            {
+                q: "Due to the storm, the flight has been ______ indefinitely.",
+                options: ["canceled", "delayed", "expired", "terminated"],
+                correct: 1,
+                explanation: "語意邏輯：'indefinitely' (無限期地) 通常搭配 'delayed' (延誤)。若是 'canceled' 則航班直接取消，不會說無限期。"
+            }
+        ],
+        office: [
+            {
+                q: "Please ______ the attached document for the meeting agenda.",
+                options: ["refer", "look", "consult", "review"],
+                correct: 3,
+                explanation: "請審閱附件文件，用 'review' 最為恰當。'Refer' 通常需搭配 'to' (refer to)。"
+            }
+        ]
+    };
+
+    let currentTheme = '';
+    let currentQuestionIndex = 0;
+    let xp = 0;
+    let level = 1;
+
+    // 啟動遊戲
+    function startGame(theme) {
+        currentTheme = theme;
+        currentQuestionIndex = 0;
+        
+        // UI 切換
+        document.getElementById('theme-selection').style.display = 'none';
+        document.getElementById('game-area').style.display = 'block';
+        
+        loadQuestion();
+    }
+
+    // 載入題目
+    function loadQuestion() {
+        const questions = questionBank[currentTheme];
+        
+        if (currentQuestionIndex >= questions.length) {
+            alert(`🎉 恭喜！你完成了 ${currentTheme} 主題的挑戰！獲得 XP: ${xp}`);
+            goBack();
+            return;
+        }
+
+        const qData = questions[currentQuestionIndex];
+        
+        // 更新進度條
+        const progress = (currentQuestionIndex / questions.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+
+        document.getElementById('category-tag').innerText = currentTheme.toUpperCase() + ' - Q' + (currentQuestionIndex + 1);
+        document.getElementById('question-text').innerText = qData.q;
+        
+        // 重置 UI
+        const optsContainer = document.getElementById('options-container');
+        optsContainer.innerHTML = '';
+        document.getElementById('feedback-area').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'none';
+
+        // 產生選項按鈕
+        qData.options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index, qData.correct, btn);
+            optsContainer.appendChild(btn);
+        });
+    }
+
+    // 檢查答案
+    function checkAnswer(selectedIndex, correctIndex, btnElement) {
+        // 防止重複點擊
+        const allBtns = document.querySelectorAll('.option-btn');
+        allBtns.forEach(btn => btn.disabled = true);
+
+        const qData = questionBank[currentTheme][currentQuestionIndex];
+        const isCorrect = selectedIndex === correctIndex;
+
+        if (isCorrect) {
+            btnElement.classList.add('correct');
+            btnElement.innerHTML += ' ✅';
+            gainXP(50); // 答對加分
+        } else {
+            btnElement.classList.add('wrong');
+            btnElement.innerHTML += ' ❌';
+            // 顯示正確答案
+            allBtns[correctIndex].classList.add('correct');
+        }
+
+        // 顯示解析與下一題按鈕
+        const feedback = document.getElementById('feedback-area');
+        document.getElementById('explanation-text').innerText = qData.explanation;
+        feedback.style.display = 'block';
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    // 經驗值系統
+    function gainXP(amount) {
+        xp += amount;
+        document.getElementById('xp-display').innerText = xp;
+        
+        // 簡單的升級邏輯
+        if (xp >= level * 100) {
+            level++;
+            document.getElementById('level-display').innerText = level;
+            // 這裡可以加入升級動畫效果
+        }
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        loadQuestion();
+    }
+
+    function goBack() {
+        document.getElementById('game-area').style.display = 'none';
+        document.getElementById('theme-selection').style.display = 'grid';
+    }
+</script>
+
+</body>
+</html>
